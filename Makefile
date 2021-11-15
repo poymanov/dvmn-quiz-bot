@@ -1,5 +1,5 @@
-run:
-	docker-compose run --rm app python src/main.py
+tg-bot:
+	docker-compose run --rm app python src/tg_bot.py
 
 flush:
 	docker-compose down -v --rmi all
