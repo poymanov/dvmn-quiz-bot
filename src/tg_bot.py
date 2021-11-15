@@ -2,6 +2,7 @@ from data import get_questions_and_answers
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 import os
 import logging
+import telegram
 
 TELEGRAM_BOT_TOKEN = os.environ['TELEGRAM_BOT_TOKEN']
 
@@ -14,8 +15,15 @@ def error(update, context):
     logger.exception('Telegram-бот упал с ошибкой')
 
 
-def echo(update, context):
+def echo_command(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, text=update.message.text)
+
+
+def start_command(update, context):
+    custom_keyboard = [['Новый вопрос', 'Сдаться'], ['Мой счёт']]
+    reply_markup = telegram.ReplyKeyboardMarkup(custom_keyboard)
+    context.bot.send_message(chat_id=update.effective_chat.id, text="Привет! Я бот для викторин!",
+                             reply_markup=reply_markup)
 
 
 def main():
@@ -24,7 +32,8 @@ def main():
     dispatcher = updater.dispatcher
     updater.start_polling()
 
-    dispatcher.add_handler(MessageHandler(Filters.text & (~Filters.command), echo))
+    dispatcher.add_handler(MessageHandler(Filters.text & (~Filters.command), echo_command))
+    dispatcher.add_handler(CommandHandler('start', start_command))
     dispatcher.add_error_handler(error)
 
 
