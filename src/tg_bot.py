@@ -15,8 +15,9 @@ def error(update, context):
     logger.exception('Telegram-бот упал с ошибкой')
 
 
-def echo_command(update, context):
-    context.bot.send_message(chat_id=update.effective_chat.id, text=update.message.text)
+def menu_command(update, context):
+    if update.message.text == 'Новый вопрос':
+        context.bot.send_message(chat_id=update.effective_chat.id, text=list(get_questions_and_answers())[0])
 
 
 def start_command(update, context):
@@ -32,7 +33,7 @@ def main():
     dispatcher = updater.dispatcher
     updater.start_polling()
 
-    dispatcher.add_handler(MessageHandler(Filters.text & (~Filters.command), echo_command))
+    dispatcher.add_handler(MessageHandler(Filters.text & (~Filters.command), menu_command))
     dispatcher.add_handler(CommandHandler('start', start_command))
     dispatcher.add_error_handler(error)
 
