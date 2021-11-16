@@ -3,12 +3,18 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 import os
 import logging
 import telegram
+import redis
 
 TELEGRAM_BOT_TOKEN = os.environ['TELEGRAM_BOT_TOKEN']
+REDIS_URL = os.environ['REDIS_URL']
+REDIS_PORT = os.environ['REDIS_PORT']
+REDIS_DB = os.environ['REDIS_DB']
+REDIS_PASSWORD = os.environ['REDIS_PASSWORD']
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
 logger = logging.getLogger(__file__)
+redisConnection = redis.Redis(host=REDIS_URL, port=REDIS_PORT, db=REDIS_DB, password=REDIS_PASSWORD)
 
 
 def error(update, context):
@@ -16,8 +22,13 @@ def error(update, context):
 
 
 def menu_command(update, context):
+    user_id = update.effective_chat.id
+    first_question = list(get_questions_and_answers())[0]
+
     if update.message.text == 'Новый вопрос':
-        context.bot.send_message(chat_id=update.effective_chat.id, text=list(get_questions_and_answers())[0])
+        context.bot.send_message(chat_id=user_id, text=first_question)
+        redisConnection.set(user_id, first_question)
+        print(redisConnection.get(user_id).decode('utf8'))
 
 
 def start_command(update, context):
