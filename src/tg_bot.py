@@ -1,5 +1,5 @@
 from data import get_questions_and_answers
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler, RegexHandler
 import os
 import logging
 import telegram
@@ -16,6 +16,8 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 
 logger = logging.getLogger(__file__)
 redisConnection = redis.Redis(host=REDIS_URL, port=REDIS_PORT, db=REDIS_DB, password=REDIS_PASSWORD)
+
+NEW_QUESTION, SOLUTION_ATTEMPT = range(2)
 
 
 def send_message(context, user_id, text, reply_markup=None):
@@ -50,42 +52,67 @@ def error(update, context):
     logger.exception('Telegram-бот упал с ошибкой')
 
 
-def menu_command(update, context):
+def handle_new_question_request(update, context):
     user_id = update.effective_chat.id
 
-    if update.message.text == 'Новый вопрос':
-        question = random.choice(list(get_questions_and_answers().keys()))
-        redisConnection.set(user_id, question)
-        context.bot.send_message(chat_id=user_id, text=question)
-    else:
-        try:
-            question = get_user_question(user_id)
-            answer = get_answer(question)
+    question = random.choice(list(get_questions_and_answers().keys()))
+    redisConnection.set(user_id, question)
 
-            if is_answer_correct(update.message.text, answer):
-                return send_message(context, user_id,
-                                    'Правильно! Поздравляю! Для следующего вопроса нажми "Новый вопрос".')
-            else:
-                return send_message(context, user_id, 'Неправильно… Попробуешь ещё раз?')
-        except Exception as e:
-            send_message(context, user_id, str(e))
+    send_message(context, user_id, question)
+
+    return SOLUTION_ATTEMPT
 
 
-def start_command(update, context):
+def handle_solution_attempt(update, context):
+    user_id = update.effective_chat.id
+
+    try:
+        question = get_user_question(user_id)
+        answer = get_answer(question)
+
+        if is_answer_correct(update.message.text, answer):
+            send_message(context, user_id, 'Правильно! Поздравляю! Для следующего вопроса нажми "Новый вопрос".')
+
+            return NEW_QUESTION
+        else:
+            send_message(context, user_id, 'Неправильно… Попробуешь ещё раз?')
+
+            return SOLUTION_ATTEMPT
+    except Exception as e:
+        send_message(context, user_id, str(e))
+
+        return NEW_QUESTION
+
+
+def start(update, context):
     custom_keyboard = [['Новый вопрос', 'Сдаться'], ['Мой счёт']]
     reply_markup = telegram.ReplyKeyboardMarkup(custom_keyboard)
     send_message(context, update.effective_chat.id, "Привет! Я бот для викторин!", reply_markup)
+
+    return NEW_QUESTION
 
 
 def main():
     updater = Updater(token=TELEGRAM_BOT_TOKEN)
 
     dispatcher = updater.dispatcher
-    updater.start_polling()
 
-    dispatcher.add_handler(MessageHandler(Filters.text & (~Filters.command), menu_command))
-    dispatcher.add_handler(CommandHandler('start', start_command))
+    conversation_handler = ConversationHandler(
+        entry_points=[CommandHandler('start', start)],
+
+        states={
+            NEW_QUESTION: [MessageHandler(Filters.regex('^Новый вопрос$'), handle_new_question_request)],
+            SOLUTION_ATTEMPT: [MessageHandler(Filters.text, handle_solution_attempt)]
+        },
+
+        fallbacks=[]
+    )
+
+    dispatcher.add_handler(conversation_handler)
     dispatcher.add_error_handler(error)
+
+    updater.start_polling()
+    updater.idle()
 
 
 if __name__ == '__main__':
