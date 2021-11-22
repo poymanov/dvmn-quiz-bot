@@ -17,14 +17,24 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 logger = logging.getLogger(__file__)
 redisConnection = redis.Redis(host=REDIS_URL, port=REDIS_PORT, db=REDIS_DB, password=REDIS_PASSWORD)
 
-NEW_QUESTION, SOLUTION_ATTEMPT = range(2)
+NEW_QUESTION, SOLUTION_ATTEMPT, SURRENDER = range(3)
 
 
 def send_message(context, user_id, text, reply_markup=None):
     context.bot.send_message(chat_id=user_id, text=text, reply_markup=reply_markup)
 
 
+def add_question_to_user(user_id):
+    question = random.choice(list(get_questions_and_answers().keys()))
+    redisConnection.set(user_id, question)
+
+    return question
+
+
 def is_answer_correct(user_answer, answer):
+    divider_index = answer.index('.')
+    answer = answer[:divider_index]
+
     return user_answer.casefold() == answer.casefold()
 
 
@@ -43,9 +53,7 @@ def get_answer(question):
     if question not in questions_and_answers:
         raise Exception('Ошибка получения ответа на вопрос. Для следующего вопроса нажми "Новый вопрос"')
 
-    raw_answer = get_questions_and_answers()[question]
-    divider_index = raw_answer.index('.')
-    return raw_answer[:divider_index]
+    return get_questions_and_answers()[question]
 
 
 def error(update, context):
@@ -55,8 +63,7 @@ def error(update, context):
 def handle_new_question_request(update, context):
     user_id = update.effective_chat.id
 
-    question = random.choice(list(get_questions_and_answers().keys()))
-    redisConnection.set(user_id, question)
+    question = add_question_to_user(user_id)
 
     send_message(context, user_id, question)
 
@@ -77,11 +84,29 @@ def handle_solution_attempt(update, context):
         else:
             send_message(context, user_id, 'Неправильно… Попробуешь ещё раз?')
 
-            return SOLUTION_ATTEMPT
+            return SURRENDER
     except Exception as e:
         send_message(context, user_id, str(e))
 
         return NEW_QUESTION
+
+
+def handle_surrender(update, context):
+    user_id = update.effective_chat.id
+
+    try:
+        question = get_user_question(user_id)
+        answer = get_answer(question)
+
+        send_message(context, user_id, answer)
+
+        new_question = add_question_to_user(user_id)
+
+        send_message(context, user_id, new_question)
+    except Exception as e:
+        send_message(context, user_id, str(e))
+
+    return SOLUTION_ATTEMPT
 
 
 def start(update, context):
@@ -102,7 +127,9 @@ def main():
 
         states={
             NEW_QUESTION: [MessageHandler(Filters.regex('^Новый вопрос$'), handle_new_question_request)],
-            SOLUTION_ATTEMPT: [MessageHandler(Filters.text, handle_solution_attempt)]
+            SURRENDER: [MessageHandler(Filters.regex('^Сдаться$'), handle_surrender),
+                        MessageHandler(Filters.text, handle_solution_attempt)],
+            SOLUTION_ATTEMPT: [MessageHandler(Filters.text, handle_solution_attempt)],
         },
 
         fallbacks=[]
