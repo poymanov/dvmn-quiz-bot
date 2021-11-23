@@ -1,8 +1,9 @@
 import os
 import logging
-import random
+from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 import vk_api as vk
 from vk_api.longpoll import VkLongPoll, VkEventType
+from vk_api.utils import get_random_id
 
 VK_GROUP_TOKEN = os.environ['VK_GROUP_TOKEN']
 
@@ -10,10 +11,19 @@ logger = logging.getLogger(__file__)
 
 
 def echo(event, vk_api):
+    keyboard = VkKeyboard(one_time=True)
+
+    keyboard.add_button('Новый вопрос')
+    keyboard.add_button('Сдаться')
+
+    keyboard.add_line()
+    keyboard.add_button('Мой счёт')
+
     vk_api.messages.send(
         user_id=event.user_id,
         message=event.text,
-        random_id=random.randint(1, 1000)
+        keyboard=keyboard.get_keyboard(),
+        random_id=get_random_id()
     )
 
 
