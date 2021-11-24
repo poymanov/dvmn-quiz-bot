@@ -1,59 +1,20 @@
-from data import get_questions_and_answers
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler, RegexHandler
 import os
 import logging
 import telegram
-import redis
-import random
+import questions_answers
 
 TELEGRAM_BOT_TOKEN = os.environ['TELEGRAM_BOT_TOKEN']
-REDIS_URL = os.environ['REDIS_URL']
-REDIS_PORT = os.environ['REDIS_PORT']
-REDIS_DB = os.environ['REDIS_DB']
-REDIS_PASSWORD = os.environ['REDIS_PASSWORD']
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
 logger = logging.getLogger(__file__)
-redisConnection = redis.Redis(host=REDIS_URL, port=REDIS_PORT, db=REDIS_DB, password=REDIS_PASSWORD)
 
 NEW_QUESTION, SOLUTION_ATTEMPT, SURRENDER = range(3)
 
 
 def send_message(context, user_id, text, reply_markup=None):
     context.bot.send_message(chat_id=user_id, text=text, reply_markup=reply_markup)
-
-
-def add_question_to_user(user_id):
-    question = random.choice(list(get_questions_and_answers().keys()))
-    redisConnection.set(user_id, question)
-
-    return question
-
-
-def is_answer_correct(user_answer, answer):
-    divider_index = answer.index('.')
-    answer = answer[:divider_index]
-
-    return user_answer.casefold() == answer.casefold()
-
-
-def get_user_question(user_id):
-    question = redisConnection.get(user_id)
-
-    if question is None:
-        raise Exception('Ошибка получения вопроса для проверки ответа. Для следующего вопроса нажми "Новый вопрос"')
-
-    return question.decode('utf8')
-
-
-def get_answer(question):
-    questions_and_answers = get_questions_and_answers()
-
-    if question not in questions_and_answers:
-        raise Exception('Ошибка получения ответа на вопрос. Для следующего вопроса нажми "Новый вопрос"')
-
-    return get_questions_and_answers()[question]
 
 
 def error(update, context):
@@ -63,7 +24,7 @@ def error(update, context):
 def handle_new_question_request(update, context):
     user_id = update.effective_chat.id
 
-    question = add_question_to_user(user_id)
+    question = questions_answers.add_question_to_user(user_id, 'tg')
 
     send_message(context, user_id, question)
 
@@ -74,10 +35,10 @@ def handle_solution_attempt(update, context):
     user_id = update.effective_chat.id
 
     try:
-        question = get_user_question(user_id)
-        answer = get_answer(question)
+        question = questions_answers.get_user_question(user_id, 'tg')
+        answer = questions_answers.get_answer(question)
 
-        if is_answer_correct(update.message.text, answer):
+        if questions_answers.is_answer_correct(update.message.text, answer):
             send_message(context, user_id, 'Правильно! Поздравляю! Для следующего вопроса нажми "Новый вопрос".')
 
             return NEW_QUESTION
@@ -95,12 +56,12 @@ def handle_surrender(update, context):
     user_id = update.effective_chat.id
 
     try:
-        question = get_user_question(user_id)
-        answer = get_answer(question)
+        question = questions_answers.get_user_question(user_id, 'tg')
+        answer = questions_answers.get_answer(question)
 
         send_message(context, user_id, answer)
 
-        new_question = add_question_to_user(user_id)
+        new_question = questions_answers.add_question_to_user(user_id, 'tg')
 
         send_message(context, user_id, new_question)
     except Exception as e:
