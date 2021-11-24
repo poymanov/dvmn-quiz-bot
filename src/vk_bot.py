@@ -1,6 +1,6 @@
 import os
 import logging
-from vk_api.keyboard import VkKeyboard
+from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 import vk_api as vk
 from vk_api.longpoll import VkLongPoll, VkEventType
 from vk_api.utils import get_random_id
@@ -57,8 +57,8 @@ def handle_solution_attempt(event, vk_api):
 def get_keyboard():
     keyboard = VkKeyboard(one_time=True)
 
-    keyboard.add_button('Новый вопрос')
-    keyboard.add_button('Сдаться')
+    keyboard.add_button('Новый вопрос', color=VkKeyboardColor.POSITIVE)
+    keyboard.add_button('Сдаться', color=VkKeyboardColor.NEGATIVE)
 
     keyboard.add_line()
     keyboard.add_button('Мой счёт')
