@@ -12,35 +12,19 @@ logger = logging.getLogger(__file__)
 
 
 def handle_new_question_request(event, vk_api):
-    question = questions_answers.add_question_to_user(event.user_id, 'vk')
-
-    send_message(vk_api, event.user_id, question)
-
-
-def handle_surrender(event, vk_api):
     user_id = event.user_id
-
-    try:
-        question = questions_answers.get_user_question(user_id, 'vk')
-        answer = questions_answers.get_answer(question)
-
-        send_message(vk_api, user_id, answer)
-
-        new_question = questions_answers.add_question_to_user(user_id, 'vk')
-
-        send_message(vk_api, user_id, new_question)
-    except Exception as e:
-        send_message(vk_api, user_id, str(e))
+    question = questions_answers.get_random_question()
+    questions_answers.add_correct_answer(user_id, 'vk', question[1])
+    send_message(vk_api, user_id, question[0])
 
 
 def handle_solution_attempt(event, vk_api):
     user_id = event.user_id
 
     try:
-        question = questions_answers.get_user_question(user_id, 'vk')
-        answer = questions_answers.get_answer(question)
+        correct_answer = questions_answers.get_correct_answer(user_id, 'vk')
 
-        if questions_answers.is_answer_correct(event.text, answer):
+        if questions_answers.is_answer_correct(event.text, correct_answer):
             send_message(vk_api, user_id, 'Правильно! Поздравляю! Для следующего вопроса нажми "Новый вопрос".')
 
             return
@@ -52,6 +36,22 @@ def handle_solution_attempt(event, vk_api):
         send_message(vk_api, user_id, str(e))
 
         return
+
+
+def handle_surrender(event, vk_api):
+    user_id = event.user_id
+
+    try:
+        correct_answer = questions_answers.get_correct_answer(user_id, 'vk')
+
+        send_message(vk_api, user_id, correct_answer)
+
+        question = questions_answers.get_random_question()
+        questions_answers.add_correct_answer(user_id, 'vk', question[1])
+
+        send_message(vk_api, user_id, question[0])
+    except Exception as e:
+        send_message(vk_api, user_id, str(e))
 
 
 def get_keyboard():

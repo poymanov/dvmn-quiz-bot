@@ -20,9 +20,10 @@ def error(update, context):
 def handle_new_question_request(update, context):
     user_id = update.effective_chat.id
 
-    question = questions_answers.add_question_to_user(user_id, 'tg')
+    question = questions_answers.get_random_question()
+    questions_answers.add_correct_answer(user_id, 'tg', question[1])
 
-    context.bot.send_message(chat_id=user_id, text=question)
+    context.bot.send_message(chat_id=user_id, text=question[0])
 
     return SOLUTION_ATTEMPT
 
@@ -31,10 +32,9 @@ def handle_solution_attempt(update, context):
     user_id = update.effective_chat.id
 
     try:
-        question = questions_answers.get_user_question(user_id, 'tg')
-        answer = questions_answers.get_answer(question)
+        correct_answer = questions_answers.get_correct_answer(user_id, 'tg')
 
-        if questions_answers.is_answer_correct(update.message.text, answer):
+        if questions_answers.is_answer_correct(update.message.text, correct_answer):
             context.bot.send_message(chat_id=user_id,
                                      text='Правильно! Поздравляю! Для следующего вопроса нажми "Новый вопрос".')
 
@@ -44,7 +44,7 @@ def handle_solution_attempt(update, context):
 
             return SURRENDER
     except Exception as e:
-        send_message(context, user_id, str(e))
+        context.bot.send_message(chat_id=user_id, text=str(e))
 
         return NEW_QUESTION
 
@@ -53,14 +53,14 @@ def handle_surrender(update, context):
     user_id = update.effective_chat.id
 
     try:
-        question = questions_answers.get_user_question(user_id, 'tg')
-        answer = questions_answers.get_answer(question)
+        correct_answer = questions_answers.get_correct_answer(user_id, 'tg')
 
-        context.bot.send_message(chat_id=user_id, text=answer)
+        context.bot.send_message(chat_id=user_id, text=correct_answer)
 
-        new_question = questions_answers.add_question_to_user(user_id, 'tg')
+        question = questions_answers.get_random_question()
+        questions_answers.add_correct_answer(user_id, 'tg', question[1])
 
-        context.bot.send_message(chat_id=user_id, text=new_question)
+        context.bot.send_message(chat_id=user_id, text=question[0])
     except Exception as e:
         context.bot.send_message(chat_id=user_id, text=str(e))
 
