@@ -13,10 +13,6 @@ logger = logging.getLogger(__file__)
 NEW_QUESTION, SOLUTION_ATTEMPT, SURRENDER = range(3)
 
 
-def send_message(context, user_id, text, reply_markup=None):
-    context.bot.send_message(chat_id=user_id, text=text, reply_markup=reply_markup)
-
-
 def error(update, context):
     logger.exception('Telegram-бот упал с ошибкой')
 
@@ -26,7 +22,7 @@ def handle_new_question_request(update, context):
 
     question = questions_answers.add_question_to_user(user_id, 'tg')
 
-    send_message(context, user_id, question)
+    context.bot.send_message(chat_id=user_id, text=question)
 
     return SOLUTION_ATTEMPT
 
@@ -39,11 +35,12 @@ def handle_solution_attempt(update, context):
         answer = questions_answers.get_answer(question)
 
         if questions_answers.is_answer_correct(update.message.text, answer):
-            send_message(context, user_id, 'Правильно! Поздравляю! Для следующего вопроса нажми "Новый вопрос".')
+            context.bot.send_message(chat_id=user_id,
+                                     text='Правильно! Поздравляю! Для следующего вопроса нажми "Новый вопрос".')
 
             return NEW_QUESTION
         else:
-            send_message(context, user_id, 'Неправильно… Попробуешь ещё раз?')
+            context.bot.send_message(chat_id=user_id, text='Неправильно… Попробуешь ещё раз?')
 
             return SURRENDER
     except Exception as e:
@@ -59,13 +56,13 @@ def handle_surrender(update, context):
         question = questions_answers.get_user_question(user_id, 'tg')
         answer = questions_answers.get_answer(question)
 
-        send_message(context, user_id, answer)
+        context.bot.send_message(chat_id=user_id, text=answer)
 
         new_question = questions_answers.add_question_to_user(user_id, 'tg')
 
-        send_message(context, user_id, new_question)
+        context.bot.send_message(chat_id=user_id, text=new_question)
     except Exception as e:
-        send_message(context, user_id, str(e))
+        context.bot.send_message(chat_id=user_id, text=str(e))
 
     return SOLUTION_ATTEMPT
 
@@ -73,7 +70,8 @@ def handle_surrender(update, context):
 def start(update, context):
     custom_keyboard = [['Новый вопрос', 'Сдаться'], ['Мой счёт']]
     reply_markup = telegram.ReplyKeyboardMarkup(custom_keyboard)
-    send_message(context, update.effective_chat.id, "Привет! Я бот для викторин!", reply_markup)
+    context.bot.send_message(chat_id=update.effective_chat.id, text="Привет! Я бот для викторин!",
+                             reply_markup=reply_markup)
 
     return NEW_QUESTION
 

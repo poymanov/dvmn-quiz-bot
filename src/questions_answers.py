@@ -10,13 +10,9 @@ REDIS_PASSWORD = os.environ['REDIS_PASSWORD']
 REDIS_CONNECTION = redis.Redis(host=REDIS_URL, port=REDIS_PORT, db=REDIS_DB, password=REDIS_PASSWORD)
 
 
-def get_question_index(user_id, prefix):
-    return '{}-{}'.format(user_id, prefix)
-
-
 def add_question_to_user(user_id, prefix):
     question = random.choice(list(get_questions_and_answers().keys()))
-    REDIS_CONNECTION.set(get_question_index(user_id, prefix), question)
+    REDIS_CONNECTION.set('{}-{}'.format(user_id, prefix), question)
 
     return question
 
@@ -29,7 +25,7 @@ def is_answer_correct(user_answer, answer):
 
 
 def get_user_question(user_id, prefix):
-    question = REDIS_CONNECTION.get(get_question_index(user_id, prefix))
+    question = REDIS_CONNECTION.get('{}-{}'.format(user_id, prefix))
 
     if question is None:
         raise Exception('Ошибка получения вопроса для проверки ответа. Для следующего вопроса нажми "Новый вопрос"')
