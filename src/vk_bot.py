@@ -21,37 +21,25 @@ def handle_new_question_request(event, vk_api):
 def handle_solution_attempt(event, vk_api):
     user_id = event.user_id
 
-    try:
-        correct_answer = questions_answers.get_correct_answer(user_id, 'vk')
+    correct_answer = questions_answers.get_correct_answer(user_id, 'vk')
 
-        if questions_answers.is_answer_correct(event.text, correct_answer):
-            send_message(vk_api, user_id, 'Правильно! Поздравляю! Для следующего вопроса нажми "Новый вопрос".')
-
-            return
-        else:
-            send_message(vk_api, user_id, 'Неправильно… Попробуешь ещё раз?')
-
-            return
-    except Exception as e:
-        send_message(vk_api, user_id, str(e))
-
-        return
+    if questions_answers.is_answer_correct(event.text, correct_answer):
+        send_message(vk_api, user_id, 'Правильно! Поздравляю! Для следующего вопроса нажми "Новый вопрос".')
+    else:
+        send_message(vk_api, user_id, 'Неправильно… Попробуешь ещё раз?')
 
 
 def handle_surrender(event, vk_api):
     user_id = event.user_id
 
-    try:
-        correct_answer = questions_answers.get_correct_answer(user_id, 'vk')
+    correct_answer = questions_answers.get_correct_answer(user_id, 'vk')
 
-        send_message(vk_api, user_id, correct_answer)
+    send_message(vk_api, user_id, correct_answer)
 
-        question = questions_answers.get_random_question()
-        questions_answers.add_correct_answer(user_id, 'vk', question[1])
+    question = questions_answers.get_random_question()
+    questions_answers.add_correct_answer(user_id, 'vk', question[1])
 
-        send_message(vk_api, user_id, question[0])
-    except Exception as e:
-        send_message(vk_api, user_id, str(e))
+    send_message(vk_api, user_id, question[0])
 
 
 def get_keyboard():
@@ -81,12 +69,17 @@ def main():
     longpoll = VkLongPoll(vk_session)
     for event in longpoll.listen():
         if event.type == VkEventType.MESSAGE_NEW and event.to_me:
-            if event.text == 'Новый вопрос':
-                handle_new_question_request(event, vk_api)
-            elif event.text == 'Сдаться':
-                handle_surrender(event, vk_api)
-            else:
-                handle_solution_attempt(event, vk_api)
+            try:
+                if event.text == 'Новый вопрос':
+                    handle_new_question_request(event, vk_api)
+                elif event.text == 'Сдаться':
+                    handle_surrender(event, vk_api)
+                else:
+                    handle_solution_attempt(event, vk_api)
+            except Exception as e:
+                send_message(vk_api, event.user_id, str(e))
+
+                return
 
 
 if __name__ == '__main__':
