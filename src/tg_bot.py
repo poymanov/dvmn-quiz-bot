@@ -6,8 +6,6 @@ import questions_answers
 
 TELEGRAM_BOT_TOKEN = os.environ['TELEGRAM_BOT_TOKEN']
 
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
-
 logger = logging.getLogger(__file__)
 
 NEW_QUESTION, SOLUTION_ATTEMPT, SURRENDER = range(3)
@@ -77,6 +75,8 @@ def start(update, context):
 
 
 def main():
+    logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+
     updater = Updater(token=TELEGRAM_BOT_TOKEN)
 
     dispatcher = updater.dispatcher
