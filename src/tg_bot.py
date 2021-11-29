@@ -29,40 +29,29 @@ def handle_new_question_request(update, context):
 def handle_solution_attempt(update, context):
     user_id = update.effective_chat.id
 
-    try:
-        correct_answer = questions_answers.get_correct_answer(user_id, 'tg')
+    correct_answer = questions_answers.get_correct_answer(user_id, 'tg')
 
-        if questions_answers.is_answer_correct(update.message.text, correct_answer):
-            context.bot.send_message(chat_id=user_id,
-                                     text='Правильно! Поздравляю! Для следующего вопроса нажми "Новый вопрос".')
-
-            return NEW_QUESTION
-        else:
-            context.bot.send_message(chat_id=user_id, text='Неправильно… Попробуешь ещё раз?')
-
-            return SURRENDER
-    except Exception as e:
-        context.bot.send_message(chat_id=user_id, text=str(e))
+    if questions_answers.is_answer_correct(update.message.text, correct_answer):
+        context.bot.send_message(chat_id=user_id,
+                                 text='Правильно! Поздравляю! Для следующего вопроса нажми "Новый вопрос".')
 
         return NEW_QUESTION
+    else:
+        context.bot.send_message(chat_id=user_id, text='Неправильно… Попробуешь ещё раз?')
+
+        return SURRENDER
 
 
 def handle_surrender(update, context):
     user_id = update.effective_chat.id
 
-    try:
-        correct_answer = questions_answers.get_correct_answer(user_id, 'tg')
+    correct_answer = questions_answers.get_correct_answer(user_id, 'tg')
+    context.bot.send_message(chat_id=user_id, text=correct_answer)
 
-        context.bot.send_message(chat_id=user_id, text=correct_answer)
+    question = questions_answers.get_random_question()
+    questions_answers.add_correct_answer(user_id, 'tg', question[1])
 
-        question = questions_answers.get_random_question()
-        questions_answers.add_correct_answer(user_id, 'tg', question[1])
-
-        context.bot.send_message(chat_id=user_id, text=question[0])
-    except Exception as e:
-        context.bot.send_message(chat_id=user_id, text=str(e))
-
-    return SOLUTION_ATTEMPT
+    context.bot.send_message(chat_id=user_id, text=question[0])
 
 
 def start(update, context):
