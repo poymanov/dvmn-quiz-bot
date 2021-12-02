@@ -20,10 +20,10 @@ def error(update, context):
 def handle_new_question_request(update, context):
     user_id = update.effective_chat.id
 
-    question = random.choice(list(get_questions_and_answers().items()))
-    questions_answers.REDIS_CONNECTION.set('{}-{}'.format(user_id, 'tg'), question[1])
+    question, answer = random.choice(list(get_questions_and_answers().items()))
+    questions_answers.REDIS_CONNECTION.set('{}-{}'.format(user_id, 'tg'), answer)
 
-    context.bot.send_message(chat_id=user_id, text=question[0])
+    context.bot.send_message(chat_id=user_id, text=question)
 
     return SOLUTION_ATTEMPT
 
@@ -50,10 +50,10 @@ def handle_surrender(update, context):
     correct_answer = questions_answers.get_correct_answer(user_id, 'tg')
     context.bot.send_message(chat_id=user_id, text=correct_answer)
 
-    question = random.choice(list(get_questions_and_answers().items()))
-    questions_answers.REDIS_CONNECTION.set('{}-{}'.format(user_id, 'tg'), question[1])
+    question, answer = random.choice(list(get_questions_and_answers().items()))
+    questions_answers.REDIS_CONNECTION.set('{}-{}'.format(user_id, 'tg'), answer)
 
-    context.bot.send_message(chat_id=user_id, text=question[0])
+    context.bot.send_message(chat_id=user_id, text=question)
 
 
 def start(update, context):

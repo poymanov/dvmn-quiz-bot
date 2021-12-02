@@ -15,10 +15,10 @@ logger = logging.getLogger(__file__)
 
 def handle_new_question_request(event, vk_api):
     user_id = event.user_id
-    question = random.choice(list(get_questions_and_answers().items()))
+    question, answer = random.choice(list(get_questions_and_answers().items()))
 
-    questions_answers.REDIS_CONNECTION.set('{}-{}'.format(user_id, 'vk'), question[1])
-    send_message(vk_api, user_id, question[0])
+    questions_answers.REDIS_CONNECTION.set('{}-{}'.format(user_id, 'vk'), answer)
+    send_message(vk_api, user_id, question)
 
 
 def handle_solution_attempt(event, vk_api):
@@ -39,10 +39,10 @@ def handle_surrender(event, vk_api):
 
     send_message(vk_api, user_id, correct_answer)
 
-    question = random.choice(list(get_questions_and_answers().items()))
-    questions_answers.REDIS_CONNECTION.set('{}-{}'.format(user_id, 'vk'), question[1])
+    question, answer = random.choice(list(get_questions_and_answers().items()))
+    questions_answers.REDIS_CONNECTION.set('{}-{}'.format(user_id, 'vk'), answer)
 
-    send_message(vk_api, user_id, question[0])
+    send_message(vk_api, user_id, question)
 
 
 def get_keyboard():
