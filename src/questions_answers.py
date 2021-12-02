@@ -1,21 +1,12 @@
 import os
 import redis
 import random
-from data import get_questions_and_answers
 
 REDIS_URL = os.environ['REDIS_URL']
 REDIS_PORT = os.environ['REDIS_PORT']
 REDIS_DB = os.environ['REDIS_DB']
 REDIS_PASSWORD = os.environ['REDIS_PASSWORD']
 REDIS_CONNECTION = redis.Redis(host=REDIS_URL, port=REDIS_PORT, db=REDIS_DB, password=REDIS_PASSWORD)
-
-
-def get_random_question():
-    return random.choice(list(get_questions_and_answers().items()))
-
-
-def add_correct_answer(user_id, prefix, answer):
-    REDIS_CONNECTION.set('{}-{}'.format(user_id, prefix), answer)
 
 
 def get_correct_answer(user_id, prefix):
