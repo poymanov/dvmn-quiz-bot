@@ -67,6 +67,8 @@ def send_message(vk_api, user_id, message):
 
 
 def main():
+    logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+
     vk_session = vk.VkApi(token=VK_GROUP_TOKEN)
     vk_api = vk_session.get_api()
     longpoll = VkLongPoll(vk_session)
@@ -80,9 +82,8 @@ def main():
                 else:
                     handle_solution_attempt(event, vk_api)
             except Exception as e:
-                send_message(vk_api, event.user_id, str(e))
-
-                return
+                send_message(vk_api, event.user_id, 'Возникла ошибка. Мы уже работаем над её исправлением.')
+                logger.exception()
 
 
 if __name__ == '__main__':
