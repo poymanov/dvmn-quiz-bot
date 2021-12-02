@@ -4,4 +4,3 @@ __pycache__
 .env
 credentials.json
 .DS_Store
-src/data.py
