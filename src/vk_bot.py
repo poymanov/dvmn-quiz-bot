@@ -6,16 +6,16 @@ from vk_api.longpoll import VkLongPoll, VkEventType
 from vk_api.utils import get_random_id
 import questions_answers
 import random
-from data import get_questions_and_answers
 
 VK_GROUP_TOKEN = os.environ['VK_GROUP_TOKEN']
+QUESTIONS = questions_answers.get_questions_answers()
 
 logger = logging.getLogger(__file__)
 
 
 def handle_new_question_request(event, vk_api):
     user_id = event.user_id
-    question, answer = random.choice(list(get_questions_and_answers().items()))
+    question, answer = random.choice(list(QUESTIONS.items()))
 
     questions_answers.REDIS_CONNECTION.set('{}-{}'.format(user_id, 'vk'), answer)
     send_message(vk_api, user_id, question)
@@ -39,7 +39,7 @@ def handle_surrender(event, vk_api):
 
     send_message(vk_api, user_id, correct_answer)
 
-    question, answer = random.choice(list(get_questions_and_answers().items()))
+    question, answer = random.choice(list(QUESTIONS.items()))
     questions_answers.REDIS_CONNECTION.set('{}-{}'.format(user_id, 'vk'), answer)
 
     send_message(vk_api, user_id, question)

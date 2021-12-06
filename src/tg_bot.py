@@ -4,9 +4,9 @@ import logging
 import telegram
 import questions_answers
 import random
-from data import get_questions_and_answers
 
 TELEGRAM_BOT_TOKEN = os.environ['TELEGRAM_BOT_TOKEN']
+QUESTIONS = questions_answers.get_questions_answers()
 
 logger = logging.getLogger(__file__)
 
@@ -20,7 +20,7 @@ def error(update, context):
 def handle_new_question_request(update, context):
     user_id = update.effective_chat.id
 
-    question, answer = random.choice(list(get_questions_and_answers().items()))
+    question, answer = random.choice(list(QUESTIONS.items()))
     questions_answers.REDIS_CONNECTION.set('{}-{}'.format(user_id, 'tg'), answer)
 
     context.bot.send_message(chat_id=user_id, text=question)
@@ -50,7 +50,7 @@ def handle_surrender(update, context):
     correct_answer = questions_answers.get_correct_answer(user_id, 'tg')
     context.bot.send_message(chat_id=user_id, text=correct_answer)
 
-    question, answer = random.choice(list(get_questions_and_answers().items()))
+    question, answer = random.choice(list(QUESTIONS.items()))
     questions_answers.REDIS_CONNECTION.set('{}-{}'.format(user_id, 'tg'), answer)
 
     context.bot.send_message(chat_id=user_id, text=question)
